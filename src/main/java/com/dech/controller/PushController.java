@@ -93,7 +93,6 @@ public class PushController {
 		tm.setData(map);
 
 		String message = MiniProgramUtils.push(s.getToken(), JSONObject.toJSONString(tm));
-
 		JSONObject obj = (JSONObject) JSONObject.parse(message);
 
 		if ((int) obj.get("errcode") == 0) {
