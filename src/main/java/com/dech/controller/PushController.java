@@ -1,6 +1,7 @@
 package com.dech.controller;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -39,8 +40,13 @@ public class PushController {
 	@Autowired
 	private SecretRepository secretRepository;
 
+	
+	/**
+	 * 向用户推送模板消息
+	 * @param openid
+	 */
 	@GetMapping(value = "/send/push")
-	public void push(String openid) {
+	public void push(@RequestParam String openid) {
 		List<Secret> list = secretRepository.findAll();
 		if (list == null || list.size() == 0) {
 			logger.error("no token find.");
@@ -55,18 +61,18 @@ public class PushController {
 			return;
 		}
 
-		PushInfo push = info.get(0);
-
-//		String token = (String) info.get("access_token");
-//		if (token == null) {
-//			logger.info("errcode: " + String.valueOf(info.get("errcode")));
-//			logger.info("errmsg: " + info.get("errmsg"));
-//			return;
-//		}
-//
-//		int expires = (int) info.get("expires_in");
-//		logger.info("token: " + token);
-//		logger.info("expires: " + String.valueOf(expires));
+		PushInfo push = null;
+		for(int i = 0; i < info.size(); i++) {
+			if(info.get(i).getStatus().equals("A")) {
+				push = info.get(i);
+				break;
+			}
+		}
+		
+		if(push == null) {
+			logger.error("no active formId.");
+			return;
+		}
 
 		TemplateMessage tm = new TemplateMessage();
 		tm.setAccess_token(s.getToken());
@@ -93,8 +99,8 @@ public class PushController {
 		tm.setData(map);
 
 		String message = MiniProgramUtils.push(s.getToken(), JSONObject.toJSONString(tm));
+		
 		JSONObject obj = (JSONObject) JSONObject.parse(message);
-
 		if ((int) obj.get("errcode") == 0) {
 			push.setStatus("S");
 		} else {
@@ -107,6 +113,40 @@ public class PushController {
 		logger.info(message);
 	}
 
+	
+	/**
+	 * 手动刷新获取access_token，防止定时刷新滞后。
+	 */
+	@GetMapping(value = "/send/token")
+	public void refresh() {
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(new Date());
+		
+		List<Secret> list = secretRepository.findAll();
+		if(list == null || list.size() == 0) {
+			logger.info("no secret find.");
+			return;
+		}
+		
+		Secret s = list.get(0);
+		JSONObject obj = JSONObject.parseObject(MiniProgramUtils.getToken());
+		if (obj.get("access_token") != null) {
+			calendar.add(Calendar.SECOND, obj.getInteger("expires_in"));
+			s.setExpires(calendar.getTime());
+			s.setToken(obj.getString("access_token"));
+			secretRepository.save(s);
+		}
+	}
+	
+	/**
+	 * 校验消息推送
+	 * 启用并设置消息推送配置后，用户发给小程序的消息以及开发者需要的事件推送，都将被微信转发至该服务器地址中
+	 * @param signature
+	 * @param timestamp
+	 * @param nonce
+	 * @param echostr
+	 * @return
+	 */
 	@GetMapping(value = "/receive/check")
 	public String receive(@RequestParam String signature, @RequestParam String timestamp, @RequestParam String nonce,
 			@RequestParam String echostr) {
@@ -125,6 +165,11 @@ public class PushController {
 		return "receive check failed.";
 	}
 
+	/**
+	 * 根据小程序登录码获取open id
+	 * @param code
+	 * @return
+	 */
 	@GetMapping(value = "/receive/openid")
 	public String receive(@RequestParam String code) {
 		logger.info("code: " + code);
@@ -152,6 +197,11 @@ public class PushController {
 		return res;
 	}
 
+	
+	/**
+	 * 添加模板信息
+	 * @param push
+	 */
 	@PostMapping(value = "/receive/formid")
 	public void generateFormid(@RequestBody PushInfo push) {
 		String openId = push.getOpenId();
@@ -174,6 +224,12 @@ public class PushController {
 		logger.info("/receive/formid insert a record: " + push.getFormId());
 	}
 
+	
+	/**
+	 * 接收小程序用户信息
+	 * @param user
+	 * @return
+	 */
 	@PostMapping(value = "/receive/user")
 	public Users getUserInfo(@RequestBody Users user) {
 		String openId = user.getOpenId();
