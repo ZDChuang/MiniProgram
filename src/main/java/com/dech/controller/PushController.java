@@ -55,21 +55,8 @@ public class PushController {
 
 		Secret s = list.get(0);
 
-		List<PushInfo> info = pushRepository.findByOpenId(openid);
-		if (info == null || info.size() == 0) {
-			logger.error("no openid find.");
-			return;
-		}
-
-		PushInfo push = null;
-		for(int i = 0; i < info.size(); i++) {
-			if(info.get(i).getStatus().equals("A")) {
-				push = info.get(i);
-				break;
-			}
-		}
-		
-		if(push == null) {
+		PushInfo push = pushRepository.findPushInfo(openid, "A");
+		if (push == null) {
 			logger.error("no active formId.");
 			return;
 		}
@@ -219,9 +206,8 @@ public class PushController {
 		push.setInfo1("This is a test message");
 		push.setInfo2("工作计划、健身计划、饮食计划、读书计划、记账经济");
 		push.setStatus("A");
-		push.setTemplate((MiniProgramUtils.TEMPLATE_STUDY));
+		push.setTemplate(MiniProgramUtils.TEMPLATE_STUDY);
 		pushRepository.save(push);
-		logger.info("/receive/formid insert a record: " + push.getFormId());
 	}
 
 	
