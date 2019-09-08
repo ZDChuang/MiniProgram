@@ -13,8 +13,10 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSONObject;
 import com.dech.domain.PushInfo;
+import com.dech.domain.PushRule;
 import com.dech.domain.Secret;
 import com.dech.repository.PushRepository;
+import com.dech.repository.RuleRepository;
 import com.dech.repository.SecretRepository;
 
 @Component
@@ -27,6 +29,48 @@ public class PushScheduleTask {
 
 	@Autowired
 	private PushRepository pushRepository;
+
+	@Autowired
+	private RuleRepository ruleRepository;
+
+	/**
+	 * 推送
+	 */
+	@Scheduled(cron = "0 0/5 * * * ?")
+	public void pushMsg() {
+		List<Secret> list = secretRepository.findAll();
+		if (list == null || list.size() == 0) {
+			logger.error("no token find.");
+			return;
+		}
+
+		Secret s = list.get(0);
+
+		List<PushRule> rules = ruleRepository.findByStatus("A");
+		if (rules == null || rules.size() == 0) {
+			return;
+		}
+
+		for (PushRule rule : rules) {
+			PushInfo push = pushRepository.findPushInfo(rule.getOpenid(), "A");
+			if (push == null) {
+				continue;
+			}
+			
+			JSONObject obj = MiniProgramUtils.push(push, rule.getOpenid(), s.getToken());
+			if ((int) obj.get("errcode") == 0) {
+				push.setStatus("S");
+			} else {
+				push.setStatus("F");
+			}
+			
+			push.setMessage((String) obj.get("errmsg"));
+			push.setPushTime(new Date());
+
+			pushRepository.save(push);
+		}
+
+	}
 
 	/**
 	 * 定时刷新，获取access_token。每10分钟执行一次，在token过期之前的15分钟到25分钟内执行

@@ -1,11 +1,8 @@
 package com.dech.controller;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSONObject;
 import com.dech.domain.PushInfo;
+import com.dech.domain.PushRule;
 import com.dech.domain.Secret;
-import com.dech.domain.TemplateMessage;
 import com.dech.domain.Users;
 import com.dech.repository.PushRepository;
+import com.dech.repository.RuleRepository;
 import com.dech.repository.SecretRepository;
 import com.dech.repository.UserRepository;
 import com.dech.util.MiniProgramUtils;
@@ -29,7 +27,6 @@ import com.dech.util.MiniProgramUtils;
 @RestController
 public class PushController {
 	private static final Logger logger = LoggerFactory.getLogger(PushController.class);
-	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	@Autowired
 	private UserRepository userRepository;
@@ -40,9 +37,33 @@ public class PushController {
 	@Autowired
 	private SecretRepository secretRepository;
 
-	
+	@Autowired
+	private RuleRepository ruleRepository;
+
+	@GetMapping(value = "/send/rule")
+	public PushRule sendRule(@RequestParam String openid) {
+		PushRule rule = ruleRepository.findByOpenid(openid);
+		if (rule == null) {
+			return null;
+		}
+
+		return rule;
+	}
+
+	@PostMapping(value = "/receive/rule")
+	public void getRule(@RequestBody PushRule r) {
+		if (r == null || "".equals(r.getOpenid())) {
+			logger.error("open id is null.");
+			return;
+		}
+
+		ruleRepository.save(r);
+		return;
+	}
+
 	/**
 	 * 向用户推送模板消息
+	 * 
 	 * @param openid
 	 */
 	@GetMapping(value = "/send/push")
@@ -61,33 +82,7 @@ public class PushController {
 			return;
 		}
 
-		TemplateMessage tm = new TemplateMessage();
-		tm.setAccess_token(s.getToken());
-		tm.setTouser(openid);
-		tm.setTemplate_id(push.getTemplate());
-		tm.setForm_id(push.getFormId());
-		tm.setPage("");
-//		tm.setEmphasis_keyword("keyword1.DATA");
-		tm.setEmphasis_keyword("");
-
-		Map<String, HashMap<String, String>> map = new HashMap<String, HashMap<String, String>>();
-		HashMap<String, String> m1 = new HashMap<String, String>();
-		HashMap<String, String> m2 = new HashMap<String, String>();
-		HashMap<String, String> m3 = new HashMap<String, String>();
-		m1.put("value", push.getInfo1());
-		map.put("keyword1", m1);
-
-		m2.put("value", push.getInfo2());
-		map.put("keyword2", m2);
-
-		m3.put("value", sdf.format(new Date()));
-		map.put("keyword3", m3);
-
-		tm.setData(map);
-
-		String message = MiniProgramUtils.push(s.getToken(), JSONObject.toJSONString(tm));
-		
-		JSONObject obj = (JSONObject) JSONObject.parse(message);
+		JSONObject obj = MiniProgramUtils.push(push, openid, s.getToken());
 		if ((int) obj.get("errcode") == 0) {
 			push.setStatus("S");
 		} else {
@@ -95,12 +90,10 @@ public class PushController {
 		}
 		push.setMessage((String) obj.get("errmsg"));
 		push.setPushTime(new Date());
-		
+
 		pushRepository.save(push);
-		logger.info(message);
 	}
 
-	
 	/**
 	 * 手动刷新获取access_token，防止定时刷新滞后。
 	 */
@@ -108,13 +101,13 @@ public class PushController {
 	public void refresh() {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(new Date());
-		
+
 		List<Secret> list = secretRepository.findAll();
-		if(list == null || list.size() == 0) {
+		if (list == null || list.size() == 0) {
 			logger.info("no secret find.");
 			return;
 		}
-		
+
 		Secret s = list.get(0);
 		JSONObject obj = JSONObject.parseObject(MiniProgramUtils.getToken());
 		if (obj.get("access_token") != null) {
@@ -124,10 +117,10 @@ public class PushController {
 			secretRepository.save(s);
 		}
 	}
-	
+
 	/**
-	 * 校验消息推送
-	 * 启用并设置消息推送配置后，用户发给小程序的消息以及开发者需要的事件推送，都将被微信转发至该服务器地址中
+	 * 校验消息推送 启用并设置消息推送配置后，用户发给小程序的消息以及开发者需要的事件推送，都将被微信转发至该服务器地址中
+	 * 
 	 * @param signature
 	 * @param timestamp
 	 * @param nonce
@@ -154,6 +147,7 @@ public class PushController {
 
 	/**
 	 * 根据小程序登录码获取open id
+	 * 
 	 * @param code
 	 * @return
 	 */
@@ -184,22 +178,22 @@ public class PushController {
 		return res;
 	}
 
-	
 	/**
 	 * 添加模板信息
+	 * 
 	 * @param push
 	 */
 	@PostMapping(value = "/receive/formid")
 	public void generateFormid(@RequestBody PushInfo push) {
 		String openId = push.getOpenId();
 		if (openId == null || openId.equals("")) {
-			logger.info("the openid is null");
+			logger.error("the openid is null");
 			return;
 		}
 
 		String formId = push.getFormId();
 		if (formId == null || formId.equals("")) {
-			logger.info("the formId is null");
+			logger.error("the formId is null");
 			return;
 		}
 
@@ -210,9 +204,9 @@ public class PushController {
 		pushRepository.save(push);
 	}
 
-	
 	/**
 	 * 接收小程序用户信息
+	 * 
 	 * @param user
 	 * @return
 	 */

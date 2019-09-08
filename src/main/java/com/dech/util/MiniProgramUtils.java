@@ -2,7 +2,11 @@ package com.dech.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -10,6 +14,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+
+import com.alibaba.fastjson.JSONObject;
+import com.dech.domain.PushInfo;
+import com.dech.domain.TemplateMessage;
 
 public class MiniProgramUtils {
 	public static final String APPID = "wx7d2be53e59324611";
@@ -21,6 +29,8 @@ public class MiniProgramUtils {
 
 	private static final String URL_OPENID = "https://api.weixin.qq.com/sns/jscode2session?appid=" + APPID + "&secret="
 			+ APPSECRET + "&js_code=RES_CODE&grant_type=authorization_code";
+
+	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	/**
 	 * 获取token
@@ -55,7 +65,7 @@ public class MiniProgramUtils {
 	 * @param request
 	 * @return
 	 */
-	public static String push(String token, String request) {
+	private static String push(String token, String request) {
 		String url = "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token=" + token;
 
 		HttpHeaders headers = new HttpHeaders();
@@ -63,8 +73,39 @@ public class MiniProgramUtils {
 		HttpEntity<String> entity = new HttpEntity<String>(request, headers);
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> res = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-//		JSONObject.parse(res.getBody());
 		return res.getBody();
+	}
+
+	public static JSONObject push(PushInfo push, String openid, String token) {
+
+		TemplateMessage tm = new TemplateMessage();
+		tm.setAccess_token(token);
+		tm.setTouser(openid);
+		tm.setTemplate_id(push.getTemplate());
+		tm.setForm_id(push.getFormId());
+		tm.setPage("");
+//		tm.setEmphasis_keyword("keyword1.DATA");
+		tm.setEmphasis_keyword("");
+
+		Map<String, HashMap<String, String>> map = new HashMap<String, HashMap<String, String>>();
+		HashMap<String, String> m1 = new HashMap<String, String>();
+		HashMap<String, String> m2 = new HashMap<String, String>();
+		HashMap<String, String> m3 = new HashMap<String, String>();
+		m1.put("value", push.getInfo1());
+		map.put("keyword1", m1);
+
+		m2.put("value", push.getInfo2());
+		map.put("keyword2", m2);
+
+		m3.put("value", sdf.format(new Date()));
+		map.put("keyword3", m3);
+
+		tm.setData(map);
+
+		String message = MiniProgramUtils.push(token, JSONObject.toJSONString(tm));
+
+		JSONObject obj = (JSONObject) JSONObject.parse(message);
+		return obj;
 	}
 
 	public static boolean checkSignature(String signature, String timestamp, String nonce) {
