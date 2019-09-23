@@ -41,9 +41,9 @@ public class PushController {
 	private RuleRepository ruleRepository;
 
 	@GetMapping(value = "/send/rule")
-	public PushRule sendRule(@RequestParam String openid) {
-		PushRule rule = ruleRepository.findByOpenid(openid);
-		if (rule == null) {
+	public List<PushRule> sendRule(@RequestParam String openid) {
+		List<PushRule> rule = ruleRepository.findByOpenid(openid);
+		if (rule == null || rule.size() == 0) {
 			return null;
 		}
 
@@ -51,14 +51,22 @@ public class PushController {
 	}
 
 	@PostMapping(value = "/receive/rule")
-	public void getRule(@RequestBody PushRule r) {
+	public int getRule(@RequestBody PushRule r) {
 		if (r == null || "".equals(r.getOpenid())) {
 			logger.error("open id is null.");
-			return;
+			return -1;
 		}
 
-		ruleRepository.save(r);
-		return;
+		PushRule rule = ruleRepository.findRecord(r.getOpenid(), r.getType());
+		if(rule == null) {
+			ruleRepository.save(r);
+			return 0;
+		} else {
+			rule.setStatus(r.getStatus());
+			rule.setPeriod(r.getPeriod());
+			ruleRepository.save(rule);
+			return 1;
+		}
 	}
 
 	/**

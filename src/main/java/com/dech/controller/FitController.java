@@ -63,7 +63,7 @@ public class FitController {
 		return findAll(openId, code);
 	}
 	
-	@GetMapping(value = "/receive/findall")
+	@GetMapping(value = "/receive/exercise/findall")
 	public String findAllData(@RequestParam String openid) {
 
 		if (openid == null || openid.equals("")) {
