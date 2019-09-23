@@ -1,5 +1,6 @@
 package com.dech.controller;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -25,9 +26,115 @@ public class EcoController {
 	@Autowired
 	private EcoRepository ecoRepository;
 
+	@GetMapping(value = "/receive/economy/income")
+	public BigDecimal calculateIncome(@RequestParam String openid, @RequestParam int start, @RequestParam int end) {
+		if (openid == null || openid.equals("")) {
+			logger.error("recentDate: the openid is null");
+			return BigDecimal.ZERO;
+		}
+
+		if (end <= start) {
+			logger.error("start date great than end date.");
+			return BigDecimal.ZERO;
+		}
+
+		BigDecimal income = ecoRepository.calculateIncome(openid, start, end);
+		if (income == null) {
+			income = BigDecimal.ZERO;
+		}
+		return income;
+	}
+
+	@GetMapping(value = "/receive/economy/total")
+	public BigDecimal calculateTotal(@RequestParam String openid, @RequestParam int start, @RequestParam int end) {
+		if (openid == null || openid.equals("")) {
+			logger.error("calculateTotal: the openid is null");
+			return BigDecimal.ZERO;
+		}
+
+		if (end <= start) {
+			logger.error("start date great than end date.");
+			return BigDecimal.ZERO;
+		}
+
+		Economy eco = ecoRepository.findStartRecords(openid, start);
+		Economy eco2 = ecoRepository.findEndRecords(openid, end);
+
+		BigDecimal s = BigDecimal.ZERO;
+		BigDecimal e = BigDecimal.ZERO;
+
+		if (eco != null) {
+			s = eco.getTotal();
+		}
+		if (eco2 != null) {
+			e = eco2.getTotal();
+		}
+		return e.subtract(s);
+	}
+
+	@GetMapping(value = "/receive/economy/benifit")
+	public BigDecimal calculateBenifit(@RequestParam String openid, @RequestParam int start, @RequestParam int end) {
+		if (openid == null || openid.equals("")) {
+			logger.error("calculateTotal: the openid is null");
+			return BigDecimal.ZERO;
+		}
+
+		if (end <= start) {
+			logger.error("start date great than end date.");
+			return BigDecimal.ZERO;
+		}
+
+		Economy eco = ecoRepository.findStartRecords(openid, start);
+		Economy eco2 = ecoRepository.findEndRecords(openid, end);
+
+		BigDecimal s = BigDecimal.ZERO;
+		BigDecimal e = BigDecimal.ZERO;
+
+		if (eco != null) {
+			s = eco.getBenifitsum();
+		}
+		if (eco2 != null) {
+			e = eco2.getBenifitsum();
+		}
+		return e.subtract(s);
+	}
+
+	@GetMapping(value = "/receive/economy/consume")
+	public BigDecimal calculateConsume(@RequestParam String openid, @RequestParam int start, @RequestParam int end) {
+		if (openid == null || openid.equals("")) {
+			logger.error("calculateTotal: the openid is null");
+			return BigDecimal.ZERO;
+		}
+
+		if (end <= start) {
+			logger.error("start date great than end date.");
+			return BigDecimal.ZERO;
+		}
+
+		Economy eco = ecoRepository.findStartRecords(openid, start);
+		Economy eco2 = ecoRepository.findEndRecords(openid, end);
+
+		BigDecimal totalStart = BigDecimal.ZERO;
+		BigDecimal totalEnd = BigDecimal.ZERO;
+		BigDecimal benifitStart = BigDecimal.ZERO;
+		BigDecimal benifitEnd = BigDecimal.ZERO;
+
+		BigDecimal income = calculateIncome(openid, start, end);
+
+		if (eco != null) {
+			benifitStart = eco.getBenifitsum();
+			totalStart = eco.getTotal();
+		}
+		if (eco2 != null) {
+			benifitEnd = eco2.getBenifitsum();
+			totalEnd = eco2.getTotal();
+		}
+		// 结束金额 - 起始金额 = 收入 + 盈利 - 消费
+		return income.add(benifitEnd.subtract(benifitStart)).subtract(totalEnd.subtract(totalStart));
+	}
+
 	@GetMapping(value = "/receive/economy/month")
 	public Economy findByMonth(@RequestParam String openid, @RequestParam String date) {
-		logger.info(date);
 		Economy eco = ecoRepository.findMonthRecords(openid, Integer.valueOf(date));
 		return eco;
 	}
