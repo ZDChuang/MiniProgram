@@ -21,4 +21,7 @@ public interface FitRepository extends JpaRepository<Fit, Object> {
 	@Lock(value = LockModeType.PESSIMISTIC_WRITE)
 	@Query(value = "select f from Fit f where f.openid=?1 and f.date=?2")
 	public Fit findRecords(String openid, int date);
+	
+	@Query(value = "select * from fit where openid=?1 order by date asc", nativeQuery = true)
+	public List<Fit> findAllData(String openid);
 }

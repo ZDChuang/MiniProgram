@@ -25,12 +25,24 @@ public class PushRule {
 
 	// 推送类型 如喝水、读书、待办事项等
 	private String type;
-
-	// 推送周期 每周、每天、每小时等
+	
+	// 简述
+	private String info;
+	
+	// 推送周期 每周、每天
 	private String period;
+	
+	// 推送周期为每周，如周一、周四
+	private String periodweek;
+	
+	// 固定时间
+	private String fixtime;
+	
+	// 间隔一定时间
+	private int hours;
 
 	// 周末是否推送
-	private String weekday;
+	private boolean pushweek;
 
 	// 推送开始时间
 	private Date begin;
@@ -79,14 +91,6 @@ public class PushRule {
 		this.period = period;
 	}
 
-	public String getWeekday() {
-		return weekday;
-	}
-
-	public void setWeekday(String weekday) {
-		this.weekday = weekday;
-	}
-
 	public Date getBegin() {
 		return begin;
 	}
@@ -125,6 +129,46 @@ public class PushRule {
 
 	public void setUpdateTime(Date updateTime) {
 		this.updateTime = updateTime;
+	}
+
+	public String getInfo() {
+		return info;
+	}
+
+	public void setInfo(String info) {
+		this.info = info;
+	}
+
+	public String getPeriodweek() {
+		return periodweek;
+	}
+
+	public void setPeriodweek(String periodweek) {
+		this.periodweek = periodweek;
+	}
+
+	public int getHours() {
+		return hours;
+	}
+
+	public void setHours(int hours) {
+		this.hours = hours;
+	}
+
+	public boolean isPushweek() {
+		return pushweek;
+	}
+
+	public void setPushweek(boolean pushweek) {
+		this.pushweek = pushweek;
+	}
+
+	public String getFixtime() {
+		return fixtime;
+	}
+
+	public void setFixtime(String fixtime) {
+		this.fixtime = fixtime;
 	}
 
 }

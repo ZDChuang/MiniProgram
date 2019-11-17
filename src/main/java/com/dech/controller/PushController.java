@@ -56,12 +56,36 @@ public class PushController {
 			logger.error("open id is null.");
 			return -1;
 		}
+		
+		if("".equals(r.getType())){
+			return -2;
+		}
+		
+		if("week".equals(r.getPeriod())){
+			if("".equals(r.getPeriodweek())) {
+				return -2;
+			}
+			if("24:00".equals(r.getFixtime()) && r.getHours() <= 0) {
+				return -2;
+			}
+		}else if("day".equals(r.getPeriod())) {
+			if("24:00".equals(r.getFixtime()) && r.getHours() <= 0) {
+				return -2;
+			}
+		} else {
+			return -2;
+		}
 
 		PushRule rule = ruleRepository.findRecord(r.getOpenid(), r.getType());
 		if(rule == null) {
 			ruleRepository.save(r);
 			return 0;
 		} else {
+			rule.setFixtime(r.getFixtime());
+			rule.setHours(r.getHours());
+			rule.setInfo(r.getInfo());
+			rule.setPeriodweek(r.getPeriodweek());
+			
 			rule.setStatus(r.getStatus());
 			rule.setPeriod(r.getPeriod());
 			ruleRepository.save(rule);

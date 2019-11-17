@@ -2,6 +2,7 @@ package com.dech.controller;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -59,10 +60,10 @@ public class FitController {
 		} else {
 			code = 1;
 		}
-		
+
 		return findAll(openId, code);
 	}
-	
+
 	@GetMapping(value = "/receive/exercise/findall")
 	public String findAllData(@RequestParam String openid) {
 
@@ -70,8 +71,51 @@ public class FitController {
 			logger.info("the openid is null");
 			return "the openid is null";
 		}
-		
+
 		return findAll(openid, 0);
+	}
+
+	@GetMapping(value = "/receive/exercise/days")
+	public Map<String, List<Integer>> countTimes(@RequestParam String openid) {
+
+		Map<String, List<Integer>> map = new HashMap<String, List<Integer>>();
+
+		if (openid == null || openid.equals("")) {
+			logger.error("getTotal: the openid is null");
+			return map;
+		}
+
+		List<Integer> months = new ArrayList<Integer>();
+		List<Integer> counts = new ArrayList<Integer>();
+		List<Fit> list = fitRepository.findAllData(openid);
+		int month = 0;
+		int count = 0;
+
+		for (Fit f : list) {
+			if (f.getDate() == 0) {
+				continue;
+			}
+
+			if (month == 0) {
+				month = f.getDate() / 100;
+			}
+
+			if (f.getDate() / 100 != month) {
+				months.add(month);
+				counts.add(count);
+				month = f.getDate() / 100;
+				count = 1;
+			} else {
+				count++;
+			}
+		}
+		months.add(month);
+		counts.add(count);
+		map.put("months", months);
+		map.put("counts", counts);
+
+		return map;
+
 	}
 
 	private String findAll(String openId, int code) {

@@ -6,6 +6,7 @@ import java.util.Date;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -19,7 +20,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 public class Economy {
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Integer id;
 
 	private String openid;
@@ -53,7 +54,15 @@ public class Economy {
 
 	private BigDecimal fund;
 	
-	private BigDecimal income;
+	private String income;
+	private BigDecimal incomes;
+	private BigDecimal income1;
+	private BigDecimal income2;
+	private BigDecimal income3;
+	private BigDecimal income4;
+	private BigDecimal income5;
+	private BigDecimal income6;
+	private BigDecimal income7;
 
 	private BigDecimal benifitsum;
 
@@ -290,11 +299,77 @@ public class Economy {
 		this.benifitsum = benifitsum;
 	}
 
-	public BigDecimal getIncome() {
+
+	public BigDecimal getIncome1() {
+		return income1;
+	}
+
+	public void setIncome1(BigDecimal income1) {
+		this.income1 = income1;
+	}
+
+
+	public BigDecimal getIncome2() {
+		return income2;
+	}
+
+	public void setIncome2(BigDecimal income2) {
+		this.income2 = income2;
+	}
+
+	public BigDecimal getIncome3() {
+		return income3;
+	}
+
+	public void setIncome3(BigDecimal income3) {
+		this.income3 = income3;
+	}
+
+	public BigDecimal getIncome4() {
+		return income4;
+	}
+
+	public void setIncome4(BigDecimal income4) {
+		this.income4 = income4;
+	}
+
+	public BigDecimal getIncome5() {
+		return income5;
+	}
+
+	public void setIncome5(BigDecimal income5) {
+		this.income5 = income5;
+	}
+
+	public BigDecimal getIncome6() {
+		return income6;
+	}
+
+	public void setIncome6(BigDecimal income6) {
+		this.income6 = income6;
+	}
+
+	public BigDecimal getIncome7() {
+		return income7;
+	}
+
+	public void setIncome7(BigDecimal income7) {
+		this.income7 = income7;
+	}
+
+	public BigDecimal getIncomes() {
+		return incomes;
+	}
+
+	public void setIncomes(BigDecimal incomes) {
+		this.incomes = incomes;
+	}
+
+	public String getIncome() {
 		return income;
 	}
 
-	public void setIncome(BigDecimal income) {
+	public void setIncome(String income) {
 		this.income = income;
 	}
 }
