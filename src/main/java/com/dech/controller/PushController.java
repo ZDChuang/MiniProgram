@@ -1,5 +1,6 @@
 package com.dech.controller;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -41,13 +42,91 @@ public class PushController {
 	private RuleRepository ruleRepository;
 
 	@GetMapping(value = "/send/rule")
-	public List<PushRule> sendRule(@RequestParam String openid) {
+	public List<List<String>> sendRule(@RequestParam String openid) {
+		List<List<String>> list = new ArrayList<List<String>>();
 		List<PushRule> rule = ruleRepository.findByOpenid(openid);
 		if (rule == null || rule.size() == 0) {
 			return null;
 		}
 
-		return rule;
+		List<String> type = new ArrayList<String>();
+		List<String> period = new ArrayList<String>();
+		List<String> time = new ArrayList<String>();
+		List<String> status = new ArrayList<String>();
+
+		for (PushRule r : rule) {
+
+			String t = r.getType().trim();
+			if (t.equals("read")) {
+				type.add("阅读");
+			} else if (t.equals("drink")) {
+				type.add("喝水");
+			} else if (t.equals("run")) {
+				type.add("运动");
+			} else if (t.equals("sleep")) {
+				type.add("睡觉");
+			} else {
+				type.add("其它");
+			}
+
+			if (r.getHours() <= 0) {
+				time.add(r.getFixtime());
+			} else {
+				time.add("每隔" + r.getHours() + "小时");
+			}
+
+			if (r.getStatus().equals("A")) {
+				status.add("开通");
+			} else {
+				status.add("关闭");
+			}
+
+			String week = "";
+			if (r.getPeriod().equals("week")) {
+				String[] days = r.getPeriodweek().split("-");
+
+				for (String s : days) {
+					switch (s) {
+					case "Monday":
+						week = week + "周一、";
+						break;
+					case "Tuesday":
+						week = week + "周二、";
+						break;
+					case "Wednesday":
+						week = week + "周三、";
+						break;
+					case "Thursday":
+						week = week + "周四、";
+						break;
+					case "Friday":
+						week = week + "周五、";
+						break;
+					case "Saturday":
+						week = week + "周六、";
+						break;
+					case "Sunday":
+						week = week + "周日、";
+						break;
+					}
+				}
+
+				week = week.trim().substring(0, week.trim().lastIndexOf('、'));
+				if (days.length == 7) {
+					week = "每天";
+				}
+
+			} else {
+				week = "每天";
+			}
+			period.add(week);
+		}
+
+		list.add(type);
+		list.add(period);
+		list.add(time);
+		list.add(status);
+		return list;
 	}
 
 	@PostMapping(value = "/receive/rule")
@@ -56,20 +135,20 @@ public class PushController {
 			logger.error("open id is null.");
 			return -1;
 		}
-		
-		if("".equals(r.getType())){
+
+		if ("".equals(r.getType())) {
 			return -2;
 		}
-		
-		if("week".equals(r.getPeriod())){
-			if("".equals(r.getPeriodweek())) {
+
+		if ("week".equals(r.getPeriod())) {
+			if ("".equals(r.getPeriodweek())) {
 				return -2;
 			}
-			if("24:00".equals(r.getFixtime()) && r.getHours() <= 0) {
+			if ("24:00".equals(r.getFixtime()) && r.getHours() <= 0) {
 				return -2;
 			}
-		}else if("day".equals(r.getPeriod())) {
-			if("24:00".equals(r.getFixtime()) && r.getHours() <= 0) {
+		} else if ("day".equals(r.getPeriod())) {
+			if ("24:00".equals(r.getFixtime()) && r.getHours() <= 0) {
 				return -2;
 			}
 		} else {
@@ -77,15 +156,18 @@ public class PushController {
 		}
 
 		PushRule rule = ruleRepository.findRecord(r.getOpenid(), r.getType());
-		if(rule == null) {
+		if (rule == null) {
+			r.setPushtimes(0);
 			ruleRepository.save(r);
 			return 0;
 		} else {
 			rule.setFixtime(r.getFixtime());
 			rule.setHours(r.getHours());
-			rule.setInfo(r.getInfo());
+			if (!"".equals(r.getInfo().trim())) {
+				rule.setInfo(r.getInfo());
+			}
 			rule.setPeriodweek(r.getPeriodweek());
-			
+
 			rule.setStatus(r.getStatus());
 			rule.setPeriod(r.getPeriod());
 			ruleRepository.save(rule);
@@ -114,7 +196,7 @@ public class PushController {
 			return;
 		}
 
-		JSONObject obj = MiniProgramUtils.push(push, openid, s.getToken());
+		JSONObject obj = MiniProgramUtils.push(push, new PushRule(), s.getToken());
 		if ((int) obj.get("errcode") == 0) {
 			push.setStatus("S");
 		} else {
@@ -229,10 +311,7 @@ public class PushController {
 			return;
 		}
 
-		push.setInfo1("This is a test message");
-		push.setInfo2("工作计划、健身计划、饮食计划、读书计划、记账经济");
 		push.setStatus("A");
-		push.setTemplate(MiniProgramUtils.TEMPLATE_STUDY);
 		pushRepository.save(push);
 	}
 

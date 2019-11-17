@@ -17,12 +17,18 @@ import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.fastjson.JSONObject;
 import com.dech.domain.PushInfo;
+import com.dech.domain.PushRule;
 import com.dech.domain.TemplateMessage;
 
 public class MiniProgramUtils {
 	public static final String APPID = "wx7d2be53e59324611";
 	public static final String APPSECRET = "5570a01af552b6d9ab80e08686c746d3";
-	public static final String TEMPLATE_STUDY = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
+	
+	public static final String TEMPLATE_RUN = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
+	public static final String TEMPLATE_READ = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
+	public static final String TEMPLATE_DRINK = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
+	public static final String TEMPLATE_OTHER = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
+	public static final String TEMPLATE_SLEEP = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
 
 	private static final String URL_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid="
 			+ APPID + "&secret=" + APPSECRET;
@@ -76,25 +82,44 @@ public class MiniProgramUtils {
 		return res.getBody();
 	}
 
-	public static JSONObject push(PushInfo push, String openid, String token) {
+	public static JSONObject push(PushInfo push, PushRule rule, String token) {
 
 		TemplateMessage tm = new TemplateMessage();
 		tm.setAccess_token(token);
-		tm.setTouser(openid);
-		tm.setTemplate_id(push.getTemplate());
+		tm.setTouser(rule.getOpenid());
 		tm.setForm_id(push.getFormId());
 		tm.setPage("");
 //		tm.setEmphasis_keyword("keyword1.DATA");
 		tm.setEmphasis_keyword("");
+		
+		String template = null;
+		switch(rule.getType()){
+			case "run":
+				template = TEMPLATE_RUN;
+				break;
+			case "drink":
+				template = TEMPLATE_DRINK;
+				break;
+			case "sleep":
+				template = TEMPLATE_SLEEP;
+				break;
+			case "read":
+				template = TEMPLATE_READ;
+				break;
+			case "other":
+				template = TEMPLATE_OTHER;
+				break;
+		}
+		tm.setTemplate_id(template);
 
 		Map<String, HashMap<String, String>> map = new HashMap<String, HashMap<String, String>>();
 		HashMap<String, String> m1 = new HashMap<String, String>();
 		HashMap<String, String> m2 = new HashMap<String, String>();
 		HashMap<String, String> m3 = new HashMap<String, String>();
-		m1.put("value", push.getInfo1());
+		m1.put("value", rule.getType());
 		map.put("keyword1", m1);
 
-		m2.put("value", push.getInfo2());
+		m2.put("value", rule.getInfo());
 		map.put("keyword2", m2);
 
 		m3.put("value", sdf.format(new Date()));

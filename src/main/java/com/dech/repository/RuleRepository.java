@@ -13,6 +13,7 @@ public interface RuleRepository extends JpaRepository<PushRule, Object> {
 
 	public List<PushRule> findByOpenid(String openid);
 
+	@Query(value = "select * from push_rule where status=?1 order by openid", nativeQuery = true)
 	public List<PushRule> findByStatus(String satus);
 	
 	@Query(value = "select * from push_rule where openid=?1 and type=?2", nativeQuery = true)

@@ -52,6 +52,12 @@ public class PushRule {
 	
 	// 推送协议状态
 	private String status;
+	
+	// the latest push time
+	private Date pushtime;
+	
+	// push times
+	private int pushtimes;
 
 	@CreatedDate
 	private Date createTime;
@@ -171,4 +177,19 @@ public class PushRule {
 		this.fixtime = fixtime;
 	}
 
+	public Date getPushtime() {
+		return pushtime;
+	}
+
+	public void setPushtime(Date pushtime) {
+		this.pushtime = pushtime;
+	}
+
+	public int getPushtimes() {
+		return pushtimes;
+	}
+
+	public void setPushtimes(int pushtimes) {
+		this.pushtimes = pushtimes;
+	}
 }

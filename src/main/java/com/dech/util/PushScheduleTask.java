@@ -1,5 +1,6 @@
 package com.dech.util;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -33,10 +34,13 @@ public class PushScheduleTask {
 	@Autowired
 	private RuleRepository ruleRepository;
 
+	private static final SimpleDateFormat sdf = new SimpleDateFormat("HHmm");
+	private static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd");
+
 	/**
 	 * 推送
 	 */
-	@Scheduled(cron = "0 0/5 * * * ?")
+	@Scheduled(cron = "0/30 * * * * ?")
 	public void pushMsg() {
 		List<Secret> list = secretRepository.findAll();
 		if (list == null || list.size() == 0) {
@@ -51,25 +55,133 @@ public class PushScheduleTask {
 			return;
 		}
 
+		Calendar cal = Calendar.getInstance();
+
+		// 检查是否需要推送
+		String openid = "";
 		for (PushRule rule : rules) {
-			PushInfo push = pushRepository.findPushInfo(rule.getOpenid(), "A");
-			if (push == null) {
+			if (rule.getOpenid().equals(openid)) {
 				continue;
 			}
-			
-			JSONObject obj = MiniProgramUtils.push(push, rule.getOpenid(), s.getToken());
+
+			PushInfo push = pushRepository.findPushInfo(rule.getOpenid(), "A");
+			if (push == null) {
+				openid = rule.getOpenid();
+				continue;
+			}
+
+			Date date = new Date();
+
+			if ("day".equals(rule.getPeriod())) {
+
+				if (!checkPushtime(rule, date)) {
+					continue;
+				}
+
+			} else if ("week".equals(rule.getPeriod())) {
+				boolean flag = false;
+				cal.setTime(date);
+				int d = cal.get(Calendar.DAY_OF_WEEK);
+				String day = "";
+				switch (d) {
+				case 1:
+					day = "Sunday";
+					break;
+				case 2:
+					day = "Monday";
+					break;
+				case 3:
+					day = "Tuesday";
+					break;
+				case 4:
+					day = "Wednesday";
+					break;
+				case 5:
+					day = "Thursday";
+					break;
+				case 6:
+					day = "Friday";
+					break;
+				case 7:
+					day = "Saturday";
+					break;
+				}
+
+				String[] week = rule.getPeriodweek().split(",");
+				for (String w : week) {
+					if (w.equals(day)) {
+						flag = true;
+						break;
+					}
+				}
+
+				if (!flag) {
+					continue;
+				}
+
+				if (!checkPushtime(rule, date)) {
+					continue;
+				}
+
+			} else {
+				continue;
+			}
+
+			// 检查通过，开始推送消息
+			JSONObject obj = MiniProgramUtils.push(push, rule, s.getToken());
 			if ((int) obj.get("errcode") == 0) {
 				push.setStatus("S");
 			} else {
 				push.setStatus("F");
 			}
-			
+
+			// 更新推送信息
 			push.setMessage((String) obj.get("errmsg"));
-			push.setPushTime(new Date());
-
+			push.setPushTime(date);
 			pushRepository.save(push);
-		}
 
+			// 更新推送规则信息
+			if ("S".equals(push.getStatus())) {
+				rule.setPushtime(date);
+				rule.setPushtimes(rule.getPushtimes() + 1);
+				ruleRepository.save(rule);
+			}
+		}
+	}
+
+	private boolean checkPushtime(PushRule rule, Date date) {
+		int time = Integer.valueOf(sdf.format(date));
+		if(time < 0630) {
+			return false;
+		}
+		
+		// push every X hours
+		if (rule.getHours() > 0) {
+			if (rule.getPushtime() != null) {
+				// 距离上次推送时间小于X小时，不推送
+				if ((date.getTime() - rule.getPushtime().getTime()) / (1000 * 60 * 60) < rule.getHours()) {
+					return false;
+				}
+			}
+
+			// push at fixed time
+		} else if (!"".equals(rule.getFixtime())) {
+			int fixtime = Integer.valueOf(rule.getFixtime().replace(":", ""));
+			int currenttime = Integer.valueOf(sdf.format(date));
+
+			// 当日已推送，则不再推送
+			if (rule.getPushtime() != null && sdf2.format(rule.getPushtime()).equals(sdf2.format(date))) {
+				return false;
+			}
+
+			if (currenttime < fixtime) {
+				return false;
+			}
+
+		} else {
+			return false;
+		}
+		return true;
 	}
 
 	/**
