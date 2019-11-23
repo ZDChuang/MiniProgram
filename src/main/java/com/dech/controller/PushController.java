@@ -3,7 +3,9 @@ package com.dech.controller;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,43 +44,39 @@ public class PushController {
 	private RuleRepository ruleRepository;
 
 	@GetMapping(value = "/send/rule")
-	public List<List<String>> sendRule(@RequestParam String openid) {
-		List<List<String>> list = new ArrayList<List<String>>();
+	public List<Map<String, String>> sendRule(@RequestParam String openid) {
+		List<Map<String, String>> items = new ArrayList<Map<String, String>>();
 		List<PushRule> rule = ruleRepository.findByOpenid(openid);
 		if (rule == null || rule.size() == 0) {
 			return null;
 		}
 
-		List<String> type = new ArrayList<String>();
-		List<String> period = new ArrayList<String>();
-		List<String> time = new ArrayList<String>();
-		List<String> status = new ArrayList<String>();
-
 		for (PushRule r : rule) {
+			Map<String, String> item = new HashMap<String, String>();
 
 			String t = r.getType().trim();
 			if (t.equals("read")) {
-				type.add("阅读");
+				item.put("type", "阅读");
 			} else if (t.equals("drink")) {
-				type.add("喝水");
+				item.put("type", "喝水");
 			} else if (t.equals("run")) {
-				type.add("运动");
+				item.put("type", "运动");
 			} else if (t.equals("sleep")) {
-				type.add("睡觉");
+				item.put("type", "睡觉");
 			} else {
-				type.add("其它");
+				item.put("type", "其它");
 			}
 
 			if (r.getHours() <= 0) {
-				time.add(r.getFixtime());
+				item.put("time", r.getFixtime());
 			} else {
-				time.add("每隔" + r.getHours() + "小时");
+				item.put("time", "每隔" + r.getHours() + "小时");
 			}
 
 			if (r.getStatus().equals("A")) {
-				status.add("开通");
+				item.put("status", "开通");
 			} else {
-				status.add("关闭");
+				item.put("status", "关闭");
 			}
 
 			String week = "";
@@ -119,14 +117,33 @@ public class PushController {
 			} else {
 				week = "每天";
 			}
-			period.add(week);
+			item.put("week", week);
+			items.add(item);
 		}
+		return items;
+	}
+	
 
-		list.add(type);
-		list.add(period);
-		list.add(time);
-		list.add(status);
-		return list;
+	@GetMapping(value = "/receive/rule/close")
+	public int closeRule(@RequestParam String openid, @RequestParam String type) {
+		if (openid == null || "".equals(openid)) {
+			logger.error("open id is null.");
+			return -1;
+		}
+		
+		if(type == null || type.equals("")) {
+			return -1;
+		}
+		
+		PushRule rule = ruleRepository.findRecord(openid, type);
+		if (rule == null) {
+			return 1;
+		} else {
+			rule.setStatus("C");
+			ruleRepository.save(rule);
+		}
+		
+		return 0;
 	}
 
 	@PostMapping(value = "/receive/rule")

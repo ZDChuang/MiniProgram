@@ -23,12 +23,12 @@ import com.dech.domain.TemplateMessage;
 public class MiniProgramUtils {
 	public static final String APPID = "wx7d2be53e59324611";
 	public static final String APPSECRET = "5570a01af552b6d9ab80e08686c746d3";
-	
-	public static final String TEMPLATE_RUN = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
-	public static final String TEMPLATE_READ = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
-	public static final String TEMPLATE_DRINK = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
-	public static final String TEMPLATE_OTHER = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
-	public static final String TEMPLATE_SLEEP = "-A7JnfPHzOGX0TqMDeGateI9Zsx7bxjBFi7ukOxlEp4";
+
+	public static final String TEMPLATE_RUN = "YsVw0paT8nGX6zJ8JK7u9a93gnX2fb2CotTWXwAc4G8";
+	public static final String TEMPLATE_READ = "-A7JnfPHzOGX0TqMDeGatT2lvsylQM8uC_F0itkwNv4";
+	public static final String TEMPLATE_DRINK = "jdgFFUPaT_PceyXVPHBHXBXovOAjH_oFOfisZZHt70E";
+	public static final String TEMPLATE_OTHER = "XyZBSuW3JhdhFWZHph6D3swRJEvUQMFvAri-ssHIY4Q";
+	public static final String TEMPLATE_SLEEP = "XyZBSuW3JhdhFWZHph6D3swRJEvUQMFvAri-ssHIY4Q";
 
 	private static final String URL_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid="
 			+ APPID + "&secret=" + APPSECRET;
@@ -91,24 +91,30 @@ public class MiniProgramUtils {
 		tm.setPage("");
 //		tm.setEmphasis_keyword("keyword1.DATA");
 		tm.setEmphasis_keyword("");
-		
+
 		String template = null;
-		switch(rule.getType()){
-			case "run":
-				template = TEMPLATE_RUN;
-				break;
-			case "drink":
-				template = TEMPLATE_DRINK;
-				break;
-			case "sleep":
-				template = TEMPLATE_SLEEP;
-				break;
-			case "read":
-				template = TEMPLATE_READ;
-				break;
-			case "other":
-				template = TEMPLATE_OTHER;
-				break;
+		String description = "";
+		switch (rule.getType()) {
+		case "run":
+			template = TEMPLATE_RUN;
+			description = "运动让生活更美好";
+			break;
+		case "drink":
+			template = TEMPLATE_DRINK;
+			description = "工作再忙也要记得喝水哦";
+			break;
+		case "sleep":
+			template = TEMPLATE_SLEEP;
+			description = "早点睡觉啦";
+			break;
+		case "read":
+			template = TEMPLATE_READ;
+			description = "好好学习，天天向上";
+			break;
+		case "other":
+			template = TEMPLATE_OTHER;
+			description = "~微信服务通知~";
+			break;
 		}
 		tm.setTemplate_id(template);
 
@@ -116,14 +122,15 @@ public class MiniProgramUtils {
 		HashMap<String, String> m1 = new HashMap<String, String>();
 		HashMap<String, String> m2 = new HashMap<String, String>();
 		HashMap<String, String> m3 = new HashMap<String, String>();
-		m1.put("value", rule.getType());
+
+		m1.put("value", description);
 		map.put("keyword1", m1);
 
-		m2.put("value", rule.getInfo());
-		map.put("keyword2", m2);
-
-		m3.put("value", sdf.format(new Date()));
+		m3.put("value", rule.getInfo());
 		map.put("keyword3", m3);
+
+		m2.put("value", sdf.format(new Date()));
+		map.put("keyword2", m2);
 
 		tm.setData(map);
 
