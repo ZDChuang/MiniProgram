@@ -107,7 +107,7 @@ public class PushScheduleTask {
 					break;
 				}
 
-				String[] week = rule.getPeriodweek().split(",");
+				String[] week = rule.getPeriodweek().split("-");
 				for (String w : week) {
 					if (w.equals(day)) {
 						flag = true;
