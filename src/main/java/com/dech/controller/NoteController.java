@@ -18,7 +18,16 @@ public class NoteController {
 
 	@Autowired
 	private NoteRepository noteRepository;
-
+	
+	@GetMapping(value = "/receive/note/flag")
+	public boolean getFlag(@RequestParam String openid) {
+		List<Note> notes = noteRepository.findByOpenid("12345");
+		if(notes == null || notes.size() < 1) {
+			return false;
+		}
+		return true;
+	}
+	
 	@GetMapping(value = "/receive/note/add")
 	public int add(@RequestParam String openId, @RequestParam String content) {
 

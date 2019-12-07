@@ -67,16 +67,16 @@ public class EcoController {
 
 				consume.add(e.getConsume());
 
-				income.add(e.getIncome());
+				income.add(e.getIncomes());
 				benifit.add(e.getBenifitsum());
 
 				// 每月净增加（当月总金额 -上月总金额）
 				if (temp.compareTo(BigDecimal.ZERO) == 0) {
 					net.add(temp);
 				} else {
-					net.add(e.getTotal().subtract(temp));
+					net.add(e.getOwntotal().subtract(temp));
 				}
-				temp = e.getTotal();
+				temp = e.getOwntotal();
 			}
 		}
 		map.put("consume", consume);
