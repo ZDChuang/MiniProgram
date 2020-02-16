@@ -74,7 +74,11 @@ public class EcoController {
 				if (temp.compareTo(BigDecimal.ZERO) == 0) {
 					net.add(temp);
 				} else {
-					net.add(e.getOwntotal().subtract(temp));
+					if (date == 202001) {
+						net.add(e.getOwntotal().subtract(temp).subtract(new BigDecimal("53448.96")));
+					} else {
+						net.add(e.getOwntotal().subtract(temp));
+					}
 				}
 				temp = e.getOwntotal();
 			}
@@ -108,7 +112,7 @@ public class EcoController {
 		if (eco == null) {
 			return map;
 		}
-		
+
 		map.put("current", eco.getWchange().add(eco.getWlicaitong()).add(eco.getMoney()));
 		map.put("hfund", eco.getCmb());
 		map.put("fund", eco.getAlipay().add(eco.getZz()));
@@ -550,8 +554,13 @@ public class EcoController {
 			eco.setCbenifit(info.getCbenifit());
 			eco.setPbenifit(info.getPbenifit());
 
+			BigDecimal lastZzBalance = eco.getZz();
+			if (lastMonth != null) {
+				lastZzBalance = lastMonth.getZz();
+			}
+
 			eco.setBenifitsum(eco.getWbenifit().add(eco.getAbenifit()).add(eco.getSbenifit()).add(eco.getCbenifit())
-					.add(eco.getPbenifit()));
+					.add(eco.getPbenifit()).add(eco.getZz().subtract(lastZzBalance)));
 
 			eco.setTotal(eco.getWchange().add(eco.getWlicaitong()).add(eco.getAlipay()).add(eco.getAhuabei())
 					.add(eco.getCmb()).add(eco.getCredit()).add(eco.getClicai()).add(eco.getZz()).add(eco.getPingan())

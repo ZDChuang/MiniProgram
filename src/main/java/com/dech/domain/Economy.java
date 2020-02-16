@@ -17,6 +17,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "openid", "date" }))
+//@Table(indexes = @Index(columnList = "openid, date"))
 @EntityListeners(AuditingEntityListener.class)
 public class Economy {
 	@Id
